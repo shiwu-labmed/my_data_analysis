@@ -21,6 +21,7 @@ import matplotlib as mpl
 import matplotlib.patheffects as PathEffects
 import os
 from tqdm import tqdm
+import IPython
 import time
 
 shell = win32com.client.Dispatch("WScript.Shell")
@@ -190,7 +191,15 @@ class MapDf(object):
     def read_df(self, path):
         self.df = read_csv8(path)
 
-    def 
+    def dup_row(self, col):
+        dup_bool = self.df[col].duplicated(keep=False)
+        return self.df[col].reset_index()[dup_bool]
+    
+    def check_dup(self, col):
+        dup_row = self.dup_row()
+        if len(dup_row)>0:
+            IPython.display.display(dup_row)
+        
 
 #%% 机器学习函数和类
 # @pysnooper.snoop('./xgboost optuna调参.log')
@@ -282,10 +291,11 @@ class MLfeature(object):
                 'please use the "add_feature_subset()" method instead')
         self.feature_tab = self.feature_tab.drop(columns=subsetname)
         self.add_feature_subset(subsetname, subsetlist, importance_list)
-os.path.splitext
-bloodcul_MLfeature = MLfeature(
-    'D:\\作业文件\\研究生\\研究生课题\\机器学习血流感染\\基本数据\\'\
-        '变量表原始数据\\血培养机器学习_特征vs重要性.csv')   
+
+# os.path.splitext
+# bloodcul_MLfeature = MLfeature(
+#     'D:\\作业文件\\研究生\\研究生课题\\机器学习血流感染\\基本数据\\'\
+#         '变量表原始数据\\血培养机器学习_特征vs重要性.csv')   
 
 #%% 系统操作函数
 def file_in_folder(folder_path, file_type='.csv'):
