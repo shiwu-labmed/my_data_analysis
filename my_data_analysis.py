@@ -376,8 +376,13 @@ class operate_software(object):
         time.sleep(0.1)
         shell.SendKeys("^n")
 
+# operate_excel = operate_software(
+#     'C:\\Program Files (x86)\\Microsoft Office\\root'\
+#         '\\Office16\\EXCEL.EXE',
+#     'XLMAIN')
+
 operate_excel = operate_software(
-    'C:\\Program Files (x86)\\Microsoft Office\\root'\
+    'C:\\Program Files\\Microsoft Office\\root'\
         '\\Office16\\EXCEL.EXE',
     'XLMAIN')
 
