@@ -16,18 +16,60 @@ import re
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import StratifiedShuffleSplit #分层抽样
+from IPython.display import display
 from matplotlib import pyplot as plt
 import matplotlib as mpl
 import matplotlib.patheffects as PathEffects
 import os
+from pathlib import *
 from tqdm import tqdm
-import IPython
 import time
 
 shell = win32com.client.Dispatch("WScript.Shell")
 
 #%% pandas函数和类
+#csv操作类
+class Csv(object):
+    def __init__(self) -> None:
+        pass
+
+    def adjust_csv_path(self, path):
+        path = str(path) if isinstance(path, Path) else path
+        assert isinstance(path, str), \
+            'you can only pass in a path string or a Path object'
+        if '.csv' not in path:
+            path = f'{path}.csv'
+        if all([i not in path for i in ['\\','/']]):
+            path = str(Path.cwd()/path)
+        return path
+
+    def read(self, file_name, my_dtype=object, encoding='gbk', **kw):
+        file_name = self.adjust_csv_path(file_name)
+        return pd.read_csv(
+            filepath_or_buffer=file_name, 
+            encoding=encoding, 
+            dtype=my_dtype, 
+            keep_default_na=False, 
+            na_values=[
+                '-1.#IND', '1.#QNAN', '1.#IND', '-1.#QNAN', '#N/A N/A','#N/A', 
+                'N/A', '#NA', 'NULL', 'NaN', '-NaN', 'nan', '-nan', ''], 
+            **kw)
+    
+    def read8(self, file_name, my_dtype=object, **kw):
+        return self.read(file_name, my_dtype=object, encoding='utf-8', **kw)
+
+    def save(self, df, path, index=False, encoding='gbk', **kw):
+        path = self.adjust_csv_path(path)
+        df.to_csv(path, index=index, encoding=encoding, **kw)
+
+    def save8(self, df, path, index=False, encoding='utf-8', **kw):
+        self.save(df, path, index=index, encoding=encoding, **kw)
+
+csv = Csv()
+        
+
 #region dataframe读取写入
+
 def read_csv(file_name, my_dtype=object, encoding='gbk', **kw):
     if '.csv' not in file_name:
         file_name = '%s.csv'%file_name
@@ -179,27 +221,38 @@ def df2dict(df, keycol='key', valcol='value', de_kna=True, de_vna=True):
         .to_dict()
 
 class MapDf(object):
-    def __init__(self) -> None:
-        pass
-    
+    def __init__(self, df_or_path:str|Path|pd.DataFrame) -> None:
+        if isinstance(df_or_path, (str, Path)):
+            self.read_csvdf(df_or_path)
+        else:
+            self.df = df_or_path
+        
     @property
     def df(self): return self.__df
     
     @df.setter
-    def df(self, df): self.__df = df
+    def df(self, df:pd.DataFrame): 
+        assert isinstance(df, pd.DataFrame), \
+            'What you passed in was not a data frame.'
+        self.__df = df
 
-    def read_df(self, path):
-        self.df = read_csv8(path)
+    def read_csvdf(self, path:str|Path):
+        self.df = csv.read8(path)
 
-    def dup_row(self, col):
-        dup_bool = self.df[col].duplicated(keep=False)
-        return self.df[col].reset_index()[dup_bool]
-    
-    def check_dup(self, col):
-        dup_row = self.dup_row()
-        if len(dup_row)>0:
-            IPython.display.display(dup_row)
-        
+    def todict(self, key:str, val:str) -> dict: 
+        keyval_undup_df = self.df.loc[:,[key,val]]\
+            .drop_duplicates([key,val])
+        keydup_index = keyval_undup_df.duplicated([key], keep=False)
+        if any(keydup_index):
+            display(keyval_undup_df[keydup_index])
+            raise KeyError(
+                'Multiple values for the same key, '
+                'these keys and their corresponding values are shown above, '
+                'please correct errors in the rule dictionary used for mapping.')
+        return keyval_undup_df\
+            .set_index([key])\
+            [val]\
+            .to_dict()
 
 #%% 机器学习函数和类
 # @pysnooper.snoop('./xgboost optuna调参.log')
@@ -291,11 +344,10 @@ class MLfeature(object):
                 'please use the "add_feature_subset()" method instead')
         self.feature_tab = self.feature_tab.drop(columns=subsetname)
         self.add_feature_subset(subsetname, subsetlist, importance_list)
-
-# os.path.splitext
-# bloodcul_MLfeature = MLfeature(
-#     'D:\\作业文件\\研究生\\研究生课题\\机器学习血流感染\\基本数据\\'\
-#         '变量表原始数据\\血培养机器学习_特征vs重要性.csv')   
+os.path.splitext
+bloodcul_MLfeature = MLfeature(
+    'D:\\作业文件\\研究生\\研究生课题\\机器学习血流感染\\基本数据\\'\
+        '变量表原始数据\\血培养机器学习_特征vs重要性.csv')   
 
 #%% 系统操作函数
 def file_in_folder(folder_path, file_type='.csv'):
@@ -376,13 +428,8 @@ class operate_software(object):
         time.sleep(0.1)
         shell.SendKeys("^n")
 
-# operate_excel = operate_software(
-#     'C:\\Program Files (x86)\\Microsoft Office\\root'\
-#         '\\Office16\\EXCEL.EXE',
-#     'XLMAIN')
-
 operate_excel = operate_software(
-    'C:\\Program Files\\Microsoft Office\\root'\
+    'C:\\Program Files (x86)\\Microsoft Office\\root'\
         '\\Office16\\EXCEL.EXE',
     'XLMAIN')
 
