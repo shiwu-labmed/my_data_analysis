@@ -75,14 +75,30 @@ def read_csv(file_name, my_dtype=object, encoding='gbk', **kw):
         file_name = '%s.csv'%file_name
     if all([i not in file_name for i in ['\\','/']]):
         file_name = r'.\%s'%file_name
-    return pd.read_csv(filepath_or_buffer=file_name, encoding=encoding, dtype=my_dtype, keep_default_na=False, na_values=['-1.#IND', '1.#QNAN', '1.#IND', '-1.#QNAN', '#N/A N/A','#N/A', 'N/A', '#NA', 'NULL', 'NaN', '-NaN', 'nan', '-nan', ''], **kw)
+    return pd.read_csv(
+        filepath_or_buffer=file_name, 
+        encoding=encoding, 
+        dtype=my_dtype, 
+        keep_default_na=False, 
+        na_values=[
+            '-1.#IND', '1.#QNAN', '1.#IND', '-1.#QNAN', '#N/A N/A',
+            '#N/A', 'N/A', '#NA', 'NULL', 'NaN', '-NaN', 'nan', '-nan', ''], 
+        **kw)
 
 def read_csv8(file_name, my_dtype=object, **kw):
     if '.csv' not in file_name:
         file_name = '%s.csv'%file_name
     if all([i not in file_name for i in ['\\','/']]):
         file_name = r'.\%s'%file_name
-    return pd.read_csv(filepath_or_buffer=file_name, encoding='utf-8', dtype=my_dtype, keep_default_na=False, na_values=['-1.#IND', '1.#QNAN', '1.#IND', '-1.#QNAN', '#N/A N/A','#N/A', 'N/A', '#NA', 'NULL', 'NaN', '-NaN', 'nan', '-nan', ''], **kw)
+    return pd.read_csv(
+        filepath_or_buffer=file_name, 
+        encoding='utf-8', 
+        dtype=my_dtype, 
+        keep_default_na=False, 
+        na_values=[
+            '-1.#IND', '1.#QNAN', '1.#IND', '-1.#QNAN', '#N/A N/A',
+            '#N/A', 'N/A', '#NA', 'NULL', 'NaN', '-NaN', 'nan', '-nan', ''], 
+        **kw)
 
 def save_csv(df, path, index=False, **kw):
     if '.csv' not in path:
@@ -221,7 +237,8 @@ def df2dict(df, keycol='key', valcol='value', de_kna=True, de_vna=True):
         .to_dict()
 
 class MapDf(object):
-    def __init__(self, df_or_path:str|Path|pd.DataFrame) -> None:
+    def __init__(self, df_or_path:'str|Path|pd.DataFrame') -> None:
+
         if isinstance(df_or_path, (str, Path)):
             self.read_csvdf(df_or_path)
         else:
@@ -236,8 +253,22 @@ class MapDf(object):
             'What you passed in was not a data frame.'
         self.__df = df
 
-    def read_csvdf(self, path:str|Path):
+    def read_csvdf(self, path:'str|Path'):
         self.df = csv.read8(path)
+
+    # def __set_key(self, key:str) -> self:
+    #     self.key = key
+    #     return self
+    
+    # def __set_val(self, val:str) -> self:
+    #     self.val = val
+    #     return self
+    
+    # def setkv(self, key:str, val:str) -> self:
+    #     self.key = key
+    #     self.val = val
+    #     return self
+
 
     def todict(self, key:str, val:str) -> dict: 
         keyval_undup_df = self.df.loc[:,[key,val]]\
@@ -253,6 +284,17 @@ class MapDf(object):
             .set_index([key])\
             [val]\
             .to_dict()
+
+def checkmap(self:pd.Series, dct:dict) -> pd.Series:
+    new_se = self.map(dct)
+    fail2map_data = self.loc[new_se.isna()].unique()
+    if len(fail2map_data)>0:
+        print('以下内容匹配失败，请检查：',
+            '\n',
+            fail2map_data.tolist(),
+            '\n')
+    return new_se
+
 
 #%% 机器学习函数和类
 # @pysnooper.snoop('./xgboost optuna调参.log')
@@ -345,9 +387,10 @@ class MLfeature(object):
         self.feature_tab = self.feature_tab.drop(columns=subsetname)
         self.add_feature_subset(subsetname, subsetlist, importance_list)
 os.path.splitext
-bloodcul_MLfeature = MLfeature(
-    'D:\\作业文件\\研究生\\研究生课题\\机器学习血流感染\\基本数据\\'\
-        '变量表原始数据\\血培养机器学习_特征vs重要性.csv')   
+
+# bloodcul_MLfeature = MLfeature(
+#     'D:\\作业文件\\研究生\\研究生课题\\机器学习血流感染\\基本数据\\'\
+#         '变量表原始数据\\血培养机器学习_特征vs重要性.csv')   
 
 #%% 系统操作函数
 def file_in_folder(folder_path, file_type='.csv'):
