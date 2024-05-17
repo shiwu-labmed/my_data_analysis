@@ -103,7 +103,7 @@ def set_misspara_as_default(default, *args):
 if __name__=='__main__':
     set_misspara_as_default(1, 3,'r',False)
 
-#%% excel操作类
+#%% excel操作
 class Excel(object):
     def __init__(self) -> None:
         pass
@@ -138,6 +138,13 @@ class Excel(object):
         pass
 
 excel = Excel()
+
+def concat_excel(globstr:str='*.xlsx',savename:str='汇总表',path:Path=Path('.')):
+    all_data = pd.DataFrame()
+    for path in Path('.').glob(globstr):
+        data = pd.read_excel(path)
+        all_data = pd.concat([all_data,data])
+    all_data.to_excel(f'./{savename}.xlsx')
 
 if __name__=='__main__':
     pass
