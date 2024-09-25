@@ -208,6 +208,25 @@ csv = Csv()
 if __name__=='__main__':
     pass
 
+#%% 合并表格文件
+def concat_table(
+        globstr:str, floder:str='.', 
+        readfunc=pd.read_csv)->pd.DataFrame:
+    
+    table_concated = pd.DataFrame()
+    for path in Path(floder).glob(globstr):
+        table = readfunc(path)
+        table_concated = pd.concat([table_concated,table])
+    return table_concated
+
+if __name__=='__main__':
+    concat_table(
+        '*筛查结果*.xlsx'
+        ,floder='E:/工作相关/【2】多耐/【2】多耐总库及每日反馈'\
+            '/【6】肛拭子数据/2021起肛拭子'
+        ,readfunc=pd.read_excel)\
+        .to_excel('肛拭子筛查汇总表.xlsx')
+
 #%% 剪贴板操作类
 class Clipboard(object):
     def __init__(self) -> None:
@@ -248,7 +267,7 @@ if __name__=='__main__':
 
 #%% 旧版函数读写操作，已弃用
 #region dataframe读取写入
-def read_csv(file_name, my_dtype=object, encoding='gbk', **kw):
+def read_csv(file_name, my_dtype=object, encoding='gbk', **kw)->pd.DataFrame:
     if '.csv' not in file_name:
         file_name = '%s.csv'%file_name
     if all([i not in file_name for i in ['\\','/']]):
@@ -263,7 +282,7 @@ def read_csv(file_name, my_dtype=object, encoding='gbk', **kw):
             '#N/A', 'N/A', '#NA', 'NULL', 'NaN', '-NaN', 'nan', '-nan', ''], 
         **kw)
 
-def read_csv8(file_name, my_dtype=object, **kw):
+def read_csv8(file_name, my_dtype=object, **kw)->pd.DataFrame:
     if '.csv' not in file_name:
         file_name = '%s.csv'%file_name
     if all([i not in file_name for i in ['\\','/']]):
@@ -295,44 +314,6 @@ def save_csv8(df, path, index=False, **kw):
 #endregion
 
 #%%
-# def file_in_folder(folder_path, file_type='.csv'):
-#     file_path_list = []
-#     for root,dirs,files in os.walk(folder_path, topdown=False):
-#         for name in files:
-#             if os.path.splitext(name)[1] == file_type:
-#                 file_path_list.append(os.path.join(root,name))
-#     return file_path_list
-
-# class get_file_from(object):
-
-#     def __init__(self,source_floder) -> None:
-#         self.source_floder = source_floder
-#         self.basename = maplist(os.listdir(source_floder))
-#         self.abspath = self.basename\
-#             .map(lambda x: f'{self.source_floder}\\{x}')
-
-#     def sufx(self, suffix):
-#         self.abspath = self.abspath\
-#             .filter(lambda x: os.path.splitext(x)[1]==suffix)
-#         return self
-
-#     def base_name(self):
-#         return self.abspath.map(os.path.basename).list
-    
-#     def base_name_nosuf(self):
-#         return self.abspath\
-#                 .map(os.path.basename)\
-#                 .map(lambda x: os.path.splitext(x)[0])\
-#                 .list
-    
-#     def adjust_path_list(self, basename=False, no_suffix=False):
-#         adjust_all = not any([basename, no_suffix])
-#         if basename or adjust_all:
-#             self.basename=self.base_name()
-#         if no_suffix or adjust_all:
-#             self.basename_nosuf=self.base_name_nosuf
-#         return self
-
 def winlnk(inkpath):
     if '.lnk' not in inkpath:
         inkpath = f'{inkpath}.lnk'

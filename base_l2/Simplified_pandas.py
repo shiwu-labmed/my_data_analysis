@@ -32,17 +32,19 @@ class move_col(object):
     def __init__(self, *col_s) -> None:
         self.moved_col = col_s[::-1]
 
-    def indf(self, df):
+    def indf(self, df:pd.DataFrame):
         self.df = df
         self.columns = df.columns.tolist()
         return self
 
     def before(self, col):
-        position = self.columns.index(col)-1
+        # position = self.columns.index(col)-1
+        position = self.columns.index(col)
         return self.to_pos(position)
 
     def after(self, col):
-        position = self.columns.index(col)
+        # position = self.columns.index(col)
+        position = self.columns.index(col)+1
         return self.to_pos(position)
 
     def to_pos(self, position):

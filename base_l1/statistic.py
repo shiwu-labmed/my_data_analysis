@@ -30,3 +30,28 @@ if __name__=='__main__':
     df.groupby('333')['111'].apply(lambda se: se.name)
     df.groupby('333')['111'].apply(lambda se: se.value_counts()).reindex()
 
+#%%
+#%%
+def allcombine_group_agg(
+        df:pd.DataFrame, combinegroupcol:list, 
+        aggcol:str, fixgroupcol:list=[],
+        aggfunc = sum,
+        fillnaval:str='总计', special_fillnaval:dict={}):
+    allcol = fixgroupcol.copy()
+    allcol.extend(combinegroupcol)
+    allcol.append(aggcol)
+    result_df = pd.DataFrame(columns=allcol)
+    for n in range(len(combinegroupcol)+1):
+        for groupcol in it.combinations(combinegroupcol,n):
+            aggdf = df\
+                .groupby(fixgroupcol+list(groupcol))[aggcol]\
+                .apply(aggfunc)\
+                .reset_index()
+            result_df = pd.concat([result_df, aggdf],ignore_index=True)
+            for col in special_fillnaval.keys():
+                if col in allcol:
+                    result_df[col] = result_df[col]\
+                        .fillna(special_fillnaval[col])
+            result_df =  result_df.fillna(fillnaval)
+    return result_df
+
