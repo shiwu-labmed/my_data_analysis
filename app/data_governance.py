@@ -12,7 +12,7 @@ from fuzzywuzzy import fuzz
 from ..base_l2 import Simplified_pandas  as spd 
 from ..base_l1 import datafile_operate  as dfo 
 
-#%%
+#%% 文本相似性去重
 def text_similarity_deduplicate(
         arr:np.array,
         threshold:float=80,
@@ -55,7 +55,7 @@ if __name__=='__main__':
         .iloc[text_similarity_deduplicate(uncategorize_note_data['标本备注'], 75)]\
         .to_csv(testpath/'不相似待分类血培养备注.csv',index=False)
     
-#%%
+#%% knn模型分类文本
 def knn_categorize_text(
         text:str, 
         trainX:'np.array|pd.Series', trainy:'np.array|pd.Series',
@@ -86,4 +86,67 @@ if __name__=='__main__':
     pd.concat([costum_note_cate, dissimilar_notes])\
         .to_csv(testpath/'特殊备注自定义处理1.csv',index=False)
 
- 
+#%% 将数字列增加英文单引号（防止excel自动转数字）
+def add1quot4digit(x)->str:
+    return f"'{x:.0f}" if isinstance(x,(int,float)) else f"'{x}"
+
+#%% 新建年季月列
+def format_year(timestr:str):
+    time = pd.to_datetime(
+        timestr if isinstance(timestr, str) else str(timestr)
+        ,errors='coerce')
+    return f'{time.year}年'
+
+def format_quarter(timestr:str):
+    time = pd.to_datetime(
+        timestr if isinstance(timestr, str) else str(timestr)
+        ,errors='coerce')
+    return f'{time.year}年 {time.quarter:02d}季度'
+
+def format_month(timestr:str):
+    time = pd.to_datetime(
+        timestr if isinstance(timestr, str) else str(timestr)
+        ,errors='coerce')
+    return f'{time.year}年 {time.month:02d}月'
+
+def format_month_scale(timestr:str, m_start:int, m_end:int):
+    time = pd.to_datetime(
+        timestr if isinstance(timestr, str) else str(timestr)
+        ,errors='coerce')
+    if m_start == m_end:
+        raise ValueError("m_start cannot be equal to m_end")
+    
+    if m_start<m_end:
+        result = f'{time.year}年{m_start}月到{m_end}月' \
+            if m_start<=time.month<=m_end \
+            else f'{time.year}年其他时间'
+    elif m_start>m_end:
+        if time.month>m_start:
+            result = f'{time.year}年{m_start}月到{time.year+1}年{m_end}月'
+        elif time.month<m_end:
+            result = f'{time.year-1}年{m_start}月到{time.year}年{m_end}月'
+        else:
+            result = f'{time.year}年{m_end+1}月到{m_start-1}月'
+    return result
+
+def add_year_quarter_month_col(
+        df:pd.DataFrame, timecol:str, 
+        col_prefix:str=None, fillnaval:str='2200-01-01') -> pd.DataFrame:
+    if df[timecol].dtype != "datetime64[ns]":
+        df[timecol] = pd.to_datetime(df[timecol].map(str), errors='coerce')
+    df[timecol] = df[timecol].fillna(pd.to_datetime(fillnaval))
+    col_prefix = timecol if col_prefix is None else col_prefix
+    df[f'{col_prefix}年'] = df[timecol].dt.year.map(int).map(str)+'年'
+    df[f'{col_prefix}季'] = df[f'{col_prefix}年']+' '+\
+        df[timecol].dt.quarter.map(int).map(str).str.zfill(2)+'季'
+    df[f'{col_prefix}月'] = df[f'{col_prefix}年']+' '+\
+        df[timecol].dt.month.map(int).map(str).str.zfill(2)+'月'
+    return df
+
+def add_year_quarter_month_cols(
+        df:pd.DataFrame, timecols:list, 
+        col_prefixs:list=[], fillnaval:str='2200-01-01') -> pd.DataFrame:
+    col_prefixs.append([None]*(len(timecols)-len(col_prefixs)))
+    for col,prefix in zip(timecols, col_prefixs):
+        df = add_year_quarter_month_col(df, col, prefix, fillnaval)
+    return df

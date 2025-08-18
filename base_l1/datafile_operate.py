@@ -215,7 +215,7 @@ def concat_table(
     
     table_concated = pd.DataFrame()
     for path in Path(floder).glob(globstr):
-        table = readfunc(path)
+        table = readfunc(str(path))
         table_concated = pd.concat([table_concated,table])
     return table_concated
 

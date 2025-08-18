@@ -4,6 +4,7 @@ import pandas as pd
 import numpy as np 
 import tqdm
 import os
+import re
 from IPython.display import display
 
 import win32con
@@ -18,15 +19,18 @@ shell = win32com.client.Dispatch("WScript.Shell")
 
 
 #%% region dataframe操作
-def col2date(df,lst,errors_='raise',normalize=False):
+def col2date(df,lst,errors_='raise',normalize=False)->pd.DataFrame:
     for date_col in lst:
         df[date_col] = pd.to_datetime(df[date_col], errors=errors_)
         if normalize:
             df[date_col] = df[date_col].dt.normalize()
+    return df
 
-def col2num(df,lst,errors_='raise'):
+def col2num(df:pd.DataFrame,lst,errors_='raise')->pd.DataFrame:
+    df = df.copy()
     for num_col in lst:
         df[num_col] = pd.to_numeric(df[num_col], errors=errors_)
+    return df
 
 class move_col(object):
     def __init__(self, *col_s) -> None:
@@ -196,3 +200,19 @@ def checkmap(self:pd.Series, dct:dict) -> pd.Series:
             fail2map_data.tolist(),
             '\n')
     return new_se
+
+#%%
+def multi_ind_dim_reduc(
+        df:pd.DataFrame, sub_reg:str=False, replacestr:str=False,joinstr:str='_') -> pd.DataFrame:
+    if sub_reg:
+        sub_reg = re.compile(sub_reg)
+        if replacestr:
+            df.columns = [joinstr.join([sub_reg.sub(replacestr, col) for col in cols]) 
+                        for cols in df.columns] 
+        else:
+            df.columns = [joinstr.join([col for col in cols if not sub_reg.match(col)]) 
+                        for cols in df.columns] 
+    else:
+        df.columns = [joinstr.join(cols) for cols in df.columns] 
+
+    return df
