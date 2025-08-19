@@ -4,14 +4,83 @@ if __name__=='__main__':
 
 import pandas as pd 
 import numpy as np
+import regex as re
 from pathlib import Path
 from tqdm import tqdm
 from difflib import SequenceMatcher
 from fuzzywuzzy import fuzz
 
 from ..base_l2 import Simplified_pandas  as spd 
-from ..base_l1 import datafile_operate  as dfo 
+from ..base_l1 import datafile_operate  as dfo
+#%%检查身份证是否规范
+def validate_id_card(id_card:str):
+    if not re.match(r'^\d{17}[\dXx]$', id_card):  # 基本格式检查
+        return False
+    
+    factors = [7, 9, 10, 5, 8, 4, 2, 1, 6, 3, 7, 9, 10, 5, 8, 4, 2]
+    check_codes = ["1", "0", "X", "9", "8", "7", "6", "5", "4", "3", "2"]
+    
+    # 计算加权和
+    total = 0
+    for i in range(17):
+        total += int(id_card[i]) * factors[i]
+    
+    # 计算校验码
+    z = total % 11
+    correct_check_code = check_codes[z]
+    
+    # 检查最后一位是否匹配
+    return id_card[-1].upper() == correct_check_code
+    pass
+#%% 使用第二个表填充空值
+def fillna_val_use_merge(
+        df:pd.DataFrame, merge_df:pd.DataFrame, idcol:str, valcol:str, 
+        mergedf_idcol:str|None=None, mergedf_valcol:str|None=None)->tuple:
+    
+    col_adj_dict = dict()
+    if mergedf_idcol:
+        col_adj_dict[mergedf_idcol] = idcol
+    mergedf_valcol = mergedf_valcol if mergedf_valcol else valcol
+    new_valcol = f'{valcol}_new'
+    col_adj_dict[mergedf_valcol] = new_valcol
 
+    merge_df = merge_df.rename(columns=col_adj_dict).loc[:,[idcol,new_valcol]]
+    merge_df_dup_rows = merge_df.loc[merge_df.duplicated(subset=[idcol],keep=False)]
+    merge_df = merge_df.dropna(subset=[idcol]).drop_duplicates(subset=[idcol],keep='first')
+    df = pd.merge(df,merge_df,on=idcol,how='left')
+    if valcol not in df.columns:
+        df[valcol] = np.nan
+    df[valcol] = df[valcol].fillna(df[new_valcol])
+    df = df.drop(columns=[new_valcol])
+    return df,merge_df_dup_rows
+    
+if __name__=='__main__':
+    df = pd.DataFrame({'a':[1,2,3,None],'b':[1,2,3,4]})
+    merge_df = pd.DataFrame({'a':[1,2,3,1],'b':[1,2,3,4]})
+    merge_df2 = pd.DataFrame({'c':[1,2,3,8],'b':[1,2,3,4]})
+    merge_df3 = pd.DataFrame({'c':[1,2,3,8],'d':[1,2,3,4]})
+    fillna_val_use_merge(df,merge_df,'b','a')[0]
+    fillna_val_use_merge(df,merge_df2,'b','c')[0]
+    fillna_val_use_merge(df,merge_df2,'b','a',mergedf_valcol='c')[0]
+    fillna_val_use_merge(df,merge_df3,'b','a',mergedf_idcol='d',mergedf_valcol='c')[0]
+    
+#%% 日期格式标化
+date_reg_sep = re.compile(r'(\d{4})[-\/\.](\d{1,2})[-\/\.](\d{1,2})')
+date_reg_nosep = re.compile(r'(\d{4})(\d{2})(\d{2})')
+def regex_ymd(x:str)->tuple:
+    match_sep = date_reg_sep.search(x)
+    if match_sep:
+        match = match_sep
+    else:
+        match = date_reg_nosep.search(x)
+    # print(match)
+    # standardized_date = f"{match.group(1)}/{int(match.group(2)):02d}/{int(match.group(3)):02d}"\
+    y,m,d = (int(match.group(1)),int(match.group(2)),int(match.group(3))) \
+        if match is not None else (np.nan,)*3
+    return y,m,d
+if __name__=='__main__':
+    regex_ymd('20250814')
+    '{0}/{1}/{2}'.format(*regex_ymd('20250814'))
 #%% 文本相似性去重
 def text_similarity_deduplicate(
         arr:np.array,
