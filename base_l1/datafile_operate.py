@@ -315,6 +315,8 @@ def save_csv8(df, path, index=False, **kw):
 
 #%%
 def winlnk(inkpath):
+    if isinstance(inkpath,Path):
+        inkpath=str(inkpath)
     if '.lnk' not in inkpath:
         inkpath = f'{inkpath}.lnk'
     if all([i not in inkpath for i in ['\\','/']]):

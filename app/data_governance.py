@@ -13,8 +13,10 @@ from fuzzywuzzy import fuzz
 from ..base_l2 import Simplified_pandas  as spd 
 from ..base_l1 import datafile_operate  as dfo
 #%%检查身份证是否规范
+all_IDcard_region_code = set(pd.read_csv('./身份证行政区代码.csv')['行政区划代码'])
 def validate_id_card(id_card:str):
-    if not re.match(r'^\d{17}[\dXx]$', id_card):  # 基本格式检查
+    idcard_match = re.match(r'^(\d{6})\d{11}[\dXx]$', id_card)
+    if not idcard_match:  # 基本格式检查
         return False
     
     factors = [7, 9, 10, 5, 8, 4, 2, 1, 6, 3, 7, 9, 10, 5, 8, 4, 2]
@@ -30,8 +32,12 @@ def validate_id_card(id_card:str):
     correct_check_code = check_codes[z]
     
     # 检查最后一位是否匹配
-    return id_card[-1].upper() == correct_check_code
-    pass
+    Check_Digit_right = id_card[-1].upper() == correct_check_code
+
+    region_code_right = idcard_match.group(1) in all_IDcard_region_code
+
+    return Check_Digit_right and region_code_right
+    
 #%% 使用第二个表填充空值
 def fillna_val_use_merge(
         df:pd.DataFrame, merge_df:pd.DataFrame, idcol:str, valcol:str, 
