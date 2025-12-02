@@ -70,6 +70,8 @@ if __name__=='__main__':
     fillna_val_use_merge(df,merge_df3,'b','a',mergedf_idcol='d',mergedf_valcol='c')[0]
     
 #%% 日期格式标化
+# date_reg_sep = re.compile(
+#     r'(\d{4})[-\/\.]?((?<=[-\/\.])\d{1,2}|\d{2})[-\/\.]?((?<=[-\/\.])\d{1,2}|\d{2})')
 date_reg_sep = re.compile(r'(\d{4})[-\/\.](\d{1,2})[-\/\.](\d{1,2})')
 date_reg_nosep = re.compile(r'(\d{4})(\d{2})(\d{2})')
 def regex_ymd(x:str)->tuple:
